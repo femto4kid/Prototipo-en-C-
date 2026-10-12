@@ -206,6 +206,13 @@ else
         string dniEstudiante = LeerTexto(
             "Ingrese DNI del estudiante: "
         );
+        if (ExisteDni(dniEstudiante))
+{
+    Console.WriteLine(
+        "Ya existe un alumno registrado con ese DNI."
+    );
+    return;
+}
 
         string dniApoderado = LeerTexto(
             "Ingrese DNI del apoderado: "
@@ -767,6 +774,20 @@ static void ReporteAlumnos()
     Console.WriteLine("Total de alumnos: " + cantidad);
     Console.WriteLine("Expedientes registrados: " + registrados);
     Console.WriteLine("Expedientes observados: " + observados);
+}
+static bool ExisteDni(string dni)
+{
+    for (int i = 0; i < cantidad; i++)
+    {
+        string[] datos = expedientes[i].Split('|');
+
+        if (datos[0] == dni)
+        {
+            return true;
+        }
+    }
+
+    return false;
 }
 static bool ValidarDni(string dni)
 {
