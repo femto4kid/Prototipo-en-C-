@@ -684,6 +684,13 @@ else
         "Expediente antiguo: no tiene nivel educativo guardado."
     );
 }
+if (!ValidarTelefono(datos[5]))
+{
+    Console.WriteLine(
+        "Teléfono inválido: debe contener exactamente 9 dígitos."
+    );
+    datosCorrectos = false;
+}
             Console.WriteLine(
                 "Datos personales: " +
                 (datosCorrectos ? "VÁLIDOS" : "INVÁLIDOS")
@@ -788,6 +795,23 @@ static bool ExisteDni(string dni)
     }
 
     return false;
+}
+static bool ValidarTelefono(string telefono)
+{
+    if (telefono.Length != 9)
+    {
+        return false;
+    }
+
+    foreach (char digito in telefono)
+    {
+        if (digito < '0' || digito > '9')
+        {
+            return false;
+        }
+    }
+
+    return true;
 }
 static bool ValidarDni(string dni)
 {
