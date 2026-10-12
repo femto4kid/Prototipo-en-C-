@@ -204,7 +204,7 @@ else
         Console.WriteLine("\n===== REGISTRAR SOLICITUD =====");
 
         string dniEstudiante = LeerTexto(
-            "Ingrese DNI o pasaporte del estudiante: "
+            "Ingrese DNI del estudiante: "
         );
 
         string dniApoderado = LeerTexto(
@@ -412,7 +412,7 @@ do
 
         Console.WriteLine("------------------------------");
         Console.WriteLine("Estudiante: " + datos[2]);
-        Console.WriteLine("DNI o pasaporte: " + datos[0]);
+        Console.WriteLine("DNI: " + datos[0]);
         Console.WriteLine("DNI del apoderado: " + datos[1]);
         string nivelGuardado = datos.Length >= 12 ? datos[11] : "";
         if (nivelGuardado == "1")
@@ -447,7 +447,7 @@ else
     static void BuscarExpediente()
     {
         string documento = LeerTexto(
-            "\nIngrese DNI o pasaporte del estudiante: "
+            "\nIngrese DNI del estudiante: "
         );
 
         bool encontrado = false;
@@ -560,7 +560,7 @@ static void OrdenarExpedientes()
         return false;
     }
 
-    static void CargarExpedientes()
+    static void CargarExpedientes() 
     {
         try
         {
@@ -631,7 +631,7 @@ if (datos.Length == 12)
     static void ValidarAlumno()
 {
     string documento = LeerTexto(
-        "\nIngrese DNI o pasaporte del alumno: "
+        "\nIngrese dni del alumno: "
     );
 
     bool encontrado = false;
