@@ -9,11 +9,20 @@ class Program
     static int cantidad = 0;
 
     static string archivo = "expedientes.txt";
+    static string archivoContador = "contador_alumnos.txt";
+    static int ultimoCodigo = 0;
 
     static void Main()
 {
     Console.OutputEncoding = Encoding.UTF8;
     CargarExpedientes();
+    if (!AsignarCodigosAnteriores())
+{
+    Console.WriteLine(
+        "No se completó la asignación de códigos. Revise los archivos."
+    );
+    return;
+}
 
     int opcion;
 
@@ -364,6 +373,15 @@ do
         );
 
         // Los campos se separan con | para guardarlos en texto.
+        string codigoAlumno = GenerarCodigoAlumno();
+
+if (codigoAlumno == "")
+{
+    Console.WriteLine(
+        "No se pudo generar el código. La solicitud no se guardó."
+    );
+    return;
+}
         string registro = string.Join("|",
             dniEstudiante,
             dniApoderado,
@@ -376,7 +394,8 @@ do
             tieneSalud.ToString(),
             tienePsicologia.ToString(),
             estado,
-            nivel.ToString()
+            nivel.ToString(),
+            codigoAlumno
         );
 
         expedientes[cantidad] = registro;
@@ -418,6 +437,14 @@ do
         string[] datos = registro.Split('|');
 
         Console.WriteLine("------------------------------");
+        if (datos.Length >= 13)
+{
+    Console.WriteLine("Código del alumno: " + datos[12]);
+}
+else
+{
+    Console.WriteLine("Código del alumno: Pendiente de asignación");
+}
         Console.WriteLine("Estudiante: " + datos[2]);
         Console.WriteLine("DNI: " + datos[0]);
         Console.WriteLine("DNI del apoderado: " + datos[1]);
@@ -583,7 +610,8 @@ static void OrdenarExpedientes()
                 string[] datos = registro.Split('|');
 
                 // Comprueba la estructura antes de cargar el registro.
-                if ((datos.Length != 11 && datos.Length != 12) ||
+                if ((datos.Length != 11 && datos.Length != 12 &&
+                 datos.Length != 13) ||
                     !int.TryParse(datos[3], out int grado) ||
                     grado < 1 || grado > 6 ||
                     (datos[4] != "1" && datos[4] != "2") ||
@@ -596,7 +624,7 @@ static void OrdenarExpedientes()
                     continue;
                 }
                 // Valida el nivel y su rango en los registros nuevos.
-if (datos.Length == 12)
+if (datos.Length >= 12 && datos[11] != "")
 {
     string nivelGuardado = datos[11];
 
@@ -663,7 +691,7 @@ if (datos.Length == 12)
                 ValidarDatos(
                     datos[0], datos[1], datos[2], grado, turno
                 );
-if (datos.Length == 12)
+if (datos.Length >= 12 && datos[11] != "")
 {
     string nivelGuardado = datos[11];
 
@@ -781,6 +809,130 @@ static void ReporteAlumnos()
     Console.WriteLine("Total de alumnos: " + cantidad);
     Console.WriteLine("Expedientes registrados: " + registrados);
     Console.WriteLine("Expedientes observados: " + observados);
+}
+static bool AsignarCodigosAnteriores()
+{
+    bool hayPendientes = false;
+
+    for (int i = 0; i < cantidad; i++)
+    {
+        if (expedientes[i].Split('|').Length < 13)
+        {
+            hayPendientes = true;
+            break;
+        }
+    }
+
+    if (!hayPendientes)
+        return true;
+
+    // Respalda el archivo antes de actualizarlo.
+    try
+    {
+        if (File.Exists(archivo))
+        {
+            string respaldo = archivo + "." +
+                DateTime.Now.ToString("yyyyMMddHHmmssfff") + ".bak";
+
+            File.Copy(archivo, respaldo);
+        }
+    }
+    catch (IOException ex)
+    {
+        Console.WriteLine("No se pudo crear el respaldo: " + ex.Message);
+        return false;
+    }
+    catch (UnauthorizedAccessException ex)
+    {
+        Console.WriteLine("No hay permiso para el respaldo: " + ex.Message);
+        return false;
+    }
+
+    for (int i = 0; i < cantidad; i++)
+    {
+        string[] datos = expedientes[i].Split('|');
+
+        if (datos.Length >= 13)
+            continue;
+
+        string codigo = GenerarCodigoAlumno();
+
+        if (codigo == "")
+            return false;
+
+        // Los registros de 11 campos no tenían nivel educativo.
+        if (datos.Length == 11)
+        {
+            expedientes[i] += "|";
+        }
+
+        expedientes[i] += "|" + codigo;
+    }
+
+    return GuardarExpedientes();
+}
+static string GenerarCodigoAlumno()
+{
+    try
+    {
+        // Recupera el último número utilizado.
+        if (File.Exists(archivoContador))
+        {
+            string contenido = File.ReadAllText(
+                archivoContador
+            ).Trim();
+
+            if (!int.TryParse(contenido, out int numeroGuardado)
+                || numeroGuardado < 0)
+            {
+                Console.WriteLine(
+                    "El contador de alumnos tiene un formato incorrecto."
+                );
+                return "";
+            }
+
+            ultimoCodigo = Math.Max(ultimoCodigo, numeroGuardado);
+        }
+
+        // Comprueba también los códigos de alumnos cargados.
+        for (int i = 0; i < cantidad; i++)
+        {
+            string[] datos = expedientes[i].Split('|');
+
+            if (datos.Length >= 13 &&
+                datos[12].StartsWith("ALU") &&
+                int.TryParse(datos[12].Substring(3), out int numero))
+            {
+                ultimoCodigo = Math.Max(ultimoCodigo, numero);
+            }
+        }
+
+        int siguiente = checked(ultimoCodigo + 1);
+
+        // Guarda el número antes de utilizar el código.
+        File.WriteAllText(
+            archivoContador,
+            siguiente.ToString()
+        );
+
+        ultimoCodigo = siguiente;
+
+        return "ALU" + siguiente.ToString("D3");
+    }
+    catch (IOException ex)
+    {
+        Console.WriteLine("No se pudo guardar el contador: " + ex.Message);
+    }
+    catch (UnauthorizedAccessException ex)
+    {
+        Console.WriteLine("No hay permiso para guardar: " + ex.Message);
+    }
+    catch (OverflowException)
+    {
+        Console.WriteLine("Se alcanzó el límite de códigos.");
+    }
+
+    return "";
 }
 static bool ExisteDni(string dni)
 {
