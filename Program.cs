@@ -230,7 +230,22 @@ else
         string nombre = LeerTexto(
             "Ingrese nombres completos del estudiante: "
         );
+string discapacidad;
 
+do
+{
+    discapacidad = LeerTexto(
+        "¿El alumno presenta discapacidad? (S/N): "
+    ).ToUpperInvariant();
+
+    if (discapacidad != "S" && discapacidad != "N")
+    {
+        Console.WriteLine(
+            "Respuesta inválida. Ingrese S para Sí o N para No."
+        );
+    }
+
+} while (discapacidad != "S" && discapacidad != "N");
        int nivel;
 
 do
@@ -286,7 +301,25 @@ do
     }
 
 } while (grado < minimo || grado > maximo);
-        
+        string seccion = "No aplica";
+
+if (nivel == 2 || nivel == 3)
+{
+    do
+    {
+        seccion = LeerTexto(
+            "Ingrese sección (A o B): "
+        ).ToUpperInvariant();
+
+        if (seccion != "A" && seccion != "B")
+        {
+            Console.WriteLine(
+                "Sección inválida. Ingrese A o B."
+            );
+        }
+
+    } while (seccion != "A" && seccion != "B");
+}
 
         Console.WriteLine("Seleccione el turno:");
         Console.WriteLine("1. Mañana");
@@ -395,7 +428,9 @@ if (codigoAlumno == "")
             tienePsicologia.ToString(),
             estado,
             nivel.ToString(),
-            codigoAlumno
+            codigoAlumno,
+            seccion,
+            discapacidad
         );
 
         expedientes[cantidad] = registro;
@@ -473,6 +508,21 @@ else
         string turno = datos[4] == "1" ? "Mañana" : "Tarde";
 
         Console.WriteLine("Turno: " + turno);
+        if (datos.Length >= 15)
+{
+    Console.WriteLine("Sección: " + datos[13]);
+
+    string discapacidadTexto = datos[14] == "S" ? "Sí" : "No";
+
+    Console.WriteLine(
+        "Presenta discapacidad: " + discapacidadTexto
+    );
+}
+else
+{
+    Console.WriteLine("Sección: No registrada");
+    Console.WriteLine("Discapacidad: No registrada");
+}
         Console.WriteLine("Teléfono: " + datos[5]);
         Console.WriteLine("Colegio de procedencia: " + datos[6]);
         Console.WriteLine("Estado del expediente: " + datos[10]);
@@ -610,8 +660,8 @@ static void OrdenarExpedientes()
                 string[] datos = registro.Split('|');
 
                 // Comprueba la estructura antes de cargar el registro.
-                if ((datos.Length != 11 && datos.Length != 12 &&
-                 datos.Length != 13) ||
+               if ((datos.Length != 11 && datos.Length != 12 &&
+                    datos.Length != 13 && datos.Length != 15) ||
                     !int.TryParse(datos[3], out int grado) ||
                     grado < 1 || grado > 6 ||
                     (datos[4] != "1" && datos[4] != "2") ||
