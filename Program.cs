@@ -22,6 +22,15 @@ class Program
         "No se completó la asignación de códigos. Revise los archivos."
     );
     return;
+    }
+
+    if (!NormalizarEstadosMatricula())
+{
+    Console.WriteLine(
+        "No se pudieron actualizar los estados de matrícula."
+    );
+    return;
+
 }
 
     int opcion;
@@ -34,42 +43,53 @@ class Program
         Console.WriteLine("3. Orden de alumnos alfabéticamente");
         Console.WriteLine("4. Validación de alumno");
         Console.WriteLine("5. Reporte de alumnos");
-        Console.WriteLine("6. Salir");
+        Console.WriteLine("6. Confirmar matrícula");
+        Console.WriteLine("7. Cancelar matrícula");
+        Console.WriteLine("8. Salir");
+
 
         opcion = LeerEntero("Seleccione una opción: ");
 
         switch (opcion)
-        {
-            case 1:
-                RegistrarSolicitud();
-                break;
+{
+    case 1:
+        RegistrarSolicitud();
+        break;
 
-            case 2:
-                BuscarExpediente();
-                break;
+    case 2:
+        BuscarExpediente();
+        break;
 
-            case 3:
-                OrdenarExpedientes();
-                break;
+    case 3:
+        OrdenarExpedientes();
+        break;
 
-            case 4:
-                ValidarAlumno();
-                break;
+    case 4:
+        ValidarAlumno();
+        break;
 
-            case 5:
-                ReporteAlumnos();
-                break;
+    case 5:
+        ReporteAlumnos();
+        break;
 
-            case 6:
-                Console.WriteLine("Programa finalizado.");
-                break;
+    case 6:
+        ConfirmarMatricula();
+        break;
 
-            default:
-                Console.WriteLine("Seleccione una opción del 1 al 6.");
-                break;
-        }
+    case 7:
+        CancelarMatricula();
+        break;
 
-    } while (opcion != 6);
+    case 8:
+        Console.WriteLine("Programa finalizado.");
+        break;
+
+    default:
+        Console.WriteLine("Seleccione una opción del 1 al 8.");
+        break;
+}
+
+   } while (opcion != 8);
 }
 
     // MÓDULO DE ENTRADA DE DATOS
@@ -430,7 +450,8 @@ if (codigoAlumno == "")
             nivel.ToString(),
             codigoAlumno,
             seccion,
-            discapacidad
+            discapacidad,
+            "PENDIENTE"
         );
 
         expedientes[cantidad] = registro;
@@ -526,6 +547,12 @@ else
         Console.WriteLine("Teléfono: " + datos[5]);
         Console.WriteLine("Colegio de procedencia: " + datos[6]);
         Console.WriteLine("Estado del expediente: " + datos[10]);
+        if (datos.Length >= 16)
+{
+    Console.WriteLine(
+        "Estado de matrícula: " + datos[15]
+    );
+}
     }
 
     static void BuscarExpediente()
@@ -661,12 +688,13 @@ static void OrdenarExpedientes()
 
                 // Comprueba la estructura antes de cargar el registro.
                if ((datos.Length != 11 && datos.Length != 12 &&
-                    datos.Length != 13 && datos.Length != 15) ||
+                    datos.Length != 13 && datos.Length != 15 &&
+                    datos.Length != 16) ||
                     !int.TryParse(datos[3], out int grado) ||
                     grado < 1 || grado > 6 ||
                     (datos[4] != "1" && datos[4] != "2") ||
                     (datos[10] != "REGISTRADO" &&
-                     datos[10] != "OBSERVADO"))
+                    datos[10] != "OBSERVADO"))
                 {
                     Console.WriteLine(
                         "Se omitió un registro con formato incorrecto."
@@ -1032,4 +1060,149 @@ static bool ValidarDni(string dni)
 
     return true;
 }
+
+static void ConfirmarMatricula()
+{
+    ActualizarEstadoMatricula("CONFIRMADA");
+}
+
+static void CancelarMatricula()
+{
+    ActualizarEstadoMatricula("CANCELADA");
+}
+
+
+static void ActualizarEstadoMatricula(string nuevoEstado)
+{
+    string dni = LeerTexto("\nIngrese DNI del alumno: ");
+
+    for (int i = 0; i < cantidad; i++)
+    {
+        string[] datos = expedientes[i].Split('|');
+
+        if (datos[0] == dni)
+        {
+            // Si se cancela, se elimina completamente al alumno.
+            if (nuevoEstado == "CANCELADA")
+            {
+                Console.WriteLine("\n===== CANCELAR MATRÍCULA =====");
+                Console.WriteLine("Alumno: " + datos[2]);
+                Console.WriteLine("DNI: " + datos[0]);
+
+                string[] respaldo = new string[cantidad];
+                Array.Copy(expedientes, respaldo, cantidad);
+
+                // Desplaza los registros para eliminar al alumno.
+                for (int j = i; j < cantidad - 1; j++)
+                {
+                    expedientes[j] = expedientes[j + 1];
+                }
+
+                cantidad--;
+                expedientes[cantidad] = "";
+
+                // Guarda los cambios en el archivo.
+                if (!GuardarExpedientes())
+                {
+                    cantidad++;
+                    Array.Copy(respaldo, expedientes, cantidad);
+
+                    Console.WriteLine(
+                        "No se pudo eliminar al alumno. Se restauraron sus datos."
+                    );
+                    return;
+                }
+
+                Console.WriteLine("\nMATRÍCULA CANCELADA CORRECTAMENTE.");
+                Console.WriteLine("El alumno fue eliminado completamente.");
+                Console.WriteLine("El DNI queda disponible para un nuevo registro.");
+
+                return;
+            }
+
+            // Confirmación de matrícula.
+            if (datos.Length < 16)
+            {
+                Console.WriteLine(
+                    "El expediente no tiene el formato actualizado."
+                );
+                return;
+            }
+
+            if (datos[15] != "PENDIENTE")
+            {
+                Console.WriteLine(
+                    "La matrícula ya fue procesada. Estado actual: "
+                    + datos[15]
+                );
+                return;
+            }
+
+            string registroAnterior = expedientes[i];
+
+            datos[15] = nuevoEstado;
+            expedientes[i] = string.Join("|", datos);
+
+            if (!GuardarExpedientes())
+            {
+                expedientes[i] = registroAnterior;
+
+                Console.WriteLine(
+                    "No se pudo actualizar la matrícula."
+                );
+                return;
+            }
+
+            Console.WriteLine("\n===== MATRÍCULA ACTUALIZADA =====");
+            Console.WriteLine("Alumno: " + datos[2]);
+            Console.WriteLine("DNI: " + datos[0]);
+            Console.WriteLine("Nuevo estado: " + nuevoEstado);
+
+            return;
+        }
+    }
+
+    Console.WriteLine("No se encontró al alumno.");
+}
+
+
+static bool NormalizarEstadosMatricula()
+{
+    string[] respaldo = new string[cantidad];
+
+    Array.Copy(expedientes, respaldo, cantidad);
+
+    for (int i = 0; i < cantidad; i++)
+    {
+        string[] datos = expedientes[i].Split('|');
+
+        if (datos.Length == 13)
+        {
+            expedientes[i] += "|No registrada|N|PENDIENTE";
+        }
+        else if (datos.Length == 15)
+        {
+            expedientes[i] += "|PENDIENTE";
+        }
+        else if (datos.Length != 16)
+        {
+            Console.WriteLine(
+                "Se encontró un expediente con formato incorrecto."
+            );
+
+            Array.Copy(respaldo, expedientes, cantidad);
+            return false;
+        }
+    }
+
+    if (!GuardarExpedientes())
+    {
+        Array.Copy(respaldo, expedientes, cantidad);
+        return false;
+    }
+
+    return true;
+}
+
+
 }
