@@ -16,7 +16,16 @@ class Program
     static void Main()
 {
     Console.OutputEncoding = Encoding.UTF8;
+    Console.WriteLine("Carpeta de trabajo: " +
+    Directory.GetCurrentDirectory());
+
+Console.WriteLine("Ruta de expedientes: " +
+    Path.GetFullPath(archivo));
+
+Console.WriteLine("Ruta del contador: " +
+    Path.GetFullPath(archivoContador));
     CargarExpedientes();
+    
     if (!AsignarCodigosAnteriores())
 {
     Console.WriteLine(
@@ -272,16 +281,33 @@ static bool VerificarVacante(int nivel, int grado, int turno)
 
         Console.WriteLine("\n===== REGISTRAR SOLICITUD =====");
 
-        string dniEstudiante = LeerTexto(
-            "Ingrese DNI del estudiante: "
-        );
-        if (ExisteDni(dniEstudiante))
+string dniEstudiante;
+
+while (true)
 {
-    Console.WriteLine(
-        "Ya existe un alumno registrado con ese DNI."
+    dniEstudiante = LeerTexto(
+        "Ingrese DNI del estudiante: "
     );
-    return;
+
+    if (!ValidarDni(dniEstudiante))
+    {
+        Console.WriteLine(
+            "ERROR: El DNI debe tener exactamente 8 dígitos y no comenzar con 0."
+        );
+        continue;
+    }
+
+    if (ExisteDni(dniEstudiante))
+    {
+        Console.WriteLine(
+            "ERROR: Ya existe un alumno registrado con ese DNI."
+        );
+        return;
+    }
+
+    break;
 }
+
 
         string dniApoderado = LeerTexto(
             "Ingrese DNI del apoderado: "
