@@ -7,6 +7,7 @@ class Program
     // Arreglo que almacena hasta 1000 expedientes.
     static string[] expedientes = new string[1000];
     static int cantidad = 0;
+    const int MAX_VACANTES = 2 ;
 
     static string archivo = "expedientes.txt";
     static string archivoContador = "contador_alumnos.txt";
@@ -45,7 +46,8 @@ class Program
         Console.WriteLine("5. Reporte de alumnos");
         Console.WriteLine("6. Confirmar matrícula");
         Console.WriteLine("7. Cancelar matrícula");
-        Console.WriteLine("8. Salir");
+        Console.WriteLine("8. Buscar alumnos por nivel educativo");
+        Console.WriteLine("9. Salir");
 
 
         opcion = LeerEntero("Seleccione una opción: ");
@@ -81,15 +83,19 @@ class Program
         break;
 
     case 8:
+    BuscarPorNivel();
+    break;
+
+    case 9:
         Console.WriteLine("Programa finalizado.");
         break;
 
     default:
-        Console.WriteLine("Seleccione una opción del 1 al 8.");
+        Console.WriteLine("Seleccione una opción del 1 al 9.");
         break;
 }
 
-   } while (opcion != 8);
+   } while (opcion != 9);
 }
 
     // MÓDULO DE ENTRADA DE DATOS
@@ -197,15 +203,49 @@ else
         return datosCorrectos;
     }
 
-    static bool VerificarVacante()
+    
+static bool VerificarVacante(int nivel, int grado, int turno)
+{
+    int ocupadas = 0;
+
+    for (int i = 0; i < cantidad; i++)
     {
-        Console.WriteLine("\nVerificando disponibilidad de vacante...");
+        string[] datos = expedientes[i].Split('|');
 
-        // Conserva la simulación del algoritmo en PSeInt.
-        bool hayVacante = true;
+        if (datos.Length < 16)
+            continue;
 
-        return hayVacante;
+        bool mismoNivel = datos[11] == nivel.ToString();
+        bool mismoGrado = datos[3] == grado.ToString();
+        bool mismoTurno = datos[4] == turno.ToString();
+
+        bool matriculaActiva =
+            datos[15] == "PENDIENTE" ||
+            datos[15] == "CONFIRMADA";
+
+        if (mismoNivel && mismoGrado &&
+            mismoTurno && matriculaActiva)
+        {
+            ocupadas++;
+        }
     }
+
+    Console.WriteLine("\n===== DISPONIBILIDAD DE VACANTES =====");
+    Console.WriteLine("Capacidad: " + MAX_VACANTES);
+    Console.WriteLine("Vacantes ocupadas: " + ocupadas);
+    Console.WriteLine("Vacantes disponibles: " +
+        (MAX_VACANTES - ocupadas));
+
+    if (ocupadas >= MAX_VACANTES)
+    {
+        Console.WriteLine("NO HAY VACANTES DISPONIBLES.");
+        return false;
+    }
+
+    Console.WriteLine("Vacante disponible.");
+    return true;
+}
+
 
     static string DeterminarEstado(
         bool tieneDocumentos,
@@ -341,11 +381,24 @@ if (nivel == 2 || nivel == 3)
     } while (seccion != "A" && seccion != "B");
 }
 
-        Console.WriteLine("Seleccione el turno:");
-        Console.WriteLine("1. Mañana");
-        Console.WriteLine("2. Tarde");
+        
+int turno;
 
-        int turno = LeerEntero("Turno: ");
+do
+{
+    Console.WriteLine("\nSeleccione el turno:");
+    Console.WriteLine("1. Mañana");
+    Console.WriteLine("2. Tarde");
+
+    turno = LeerEntero("Turno: ");
+
+    if (turno != 1 && turno != 2)
+    {
+        Console.WriteLine("Opción inválida. Seleccione 1 o 2.");
+    }
+
+} while (turno != 1 && turno != 2);
+
 
         string telefono;
 bool telefonoValido;
@@ -407,8 +460,7 @@ do
             return;
         }
 
-        bool hayVacante = VerificarVacante();
-
+        bool hayVacante = VerificarVacante(nivel, grado, turno);
         if (!hayVacante)
         {
             Console.WriteLine(
@@ -423,7 +475,16 @@ do
 
         string estado = DeterminarEstado(
             tieneDocumentos, tieneSalud, tienePsicologia
+            
         );
+        
+DateTime fechaRegistro = DateTime.Today;
+DateTime fechaReserva = fechaRegistro.AddDays(7);
+
+string fechaSubsanacion = estado == "OBSERVADO"
+    ? fechaRegistro.AddDays(7).ToString("yyyy-MM-dd")
+    : "NO APLICA";
+
 
         // Los campos se separan con | para guardarlos en texto.
         string codigoAlumno = GenerarCodigoAlumno();
@@ -547,39 +608,92 @@ else
         Console.WriteLine("Teléfono: " + datos[5]);
         Console.WriteLine("Colegio de procedencia: " + datos[6]);
         Console.WriteLine("Estado del expediente: " + datos[10]);
-        if (datos.Length >= 16)
+       if (datos.Length >= 16)
 {
     Console.WriteLine(
         "Estado de matrícula: " + datos[15]
     );
 }
-    }
+else
+{
+    Console.WriteLine(
+        "Estado de matrícula: PENDIENTE DE ACTUALIZACIÓN"
+    );
 
-    static void BuscarExpediente()
+}
+
+if (datos.Length >= 19)
+{
+    Console.WriteLine("Fecha de registro: " + datos[16]);
+    Console.WriteLine("Vencimiento de reserva: " + datos[17]);
+    Console.WriteLine("Límite de subsanación: " + datos[18]);
+
+    if (DateTime.TryParseExact(
+        datos[17], "yyyy-MM-dd",
+        System.Globalization.CultureInfo.InvariantCulture,
+        System.Globalization.DateTimeStyles.None,
+        out DateTime vencimiento))
     {
-        string documento = LeerTexto(
-            "\nIngrese DNI del estudiante: "
-        );
-
-        bool encontrado = false;
-
-        for (int i = 0; i < cantidad; i++)
+        if (datos[15] == "PENDIENTE" &&
+            DateTime.Today > vencimiento)
         {
-            string[] datos = expedientes[i].Split('|');
-
-            if (datos[0].Equals(
-                documento, StringComparison.OrdinalIgnoreCase))
-            {
-                MostrarExpediente(expedientes[i]);
-                encontrado = true;
-            }
-        }
-
-        if (!encontrado)
-        {
-            Console.WriteLine("No se encontró el expediente.");
+            Console.WriteLine("AVISO: La reserva está vencida.");
         }
     }
+}
+
+    }
+
+    
+static void BuscarExpediente()
+{
+    Console.WriteLine("\n===== BÚSQUEDA DE EXPEDIENTE =====");
+    Console.WriteLine("1. Buscar por DNI");
+    Console.WriteLine("2. Buscar por código de expediente");
+    Console.WriteLine("0. Regresar");
+
+    int opcionBusqueda = LeerEntero("Seleccione una opción: ");
+
+    if (opcionBusqueda == 0)
+        return;
+
+    if (opcionBusqueda != 1 && opcionBusqueda != 2)
+    {
+        Console.WriteLine("Opción inválida.");
+        return;
+    }
+
+    string valor = LeerTexto(
+        opcionBusqueda == 1
+        ? "Ingrese DNI del estudiante: "
+        : "Ingrese código de expediente (ejemplo ALU001): "
+    ).ToUpperInvariant();
+
+    bool encontrado = false;
+
+    for (int i = 0; i < cantidad; i++)
+    {
+        string[] datos = expedientes[i].Split('|');
+
+        bool coincide = opcionBusqueda == 1
+            ? datos[0] == valor
+            : datos.Length >= 13 &&
+              datos[12].Equals(valor, StringComparison.OrdinalIgnoreCase);
+
+        if (coincide)
+        {
+            MostrarExpediente(expedientes[i]);
+            encontrado = true;
+            break;
+        }
+    }
+
+    if (!encontrado)
+    {
+        Console.WriteLine("No se encontró el expediente.");
+    }
+}
+
 
     static void ListarExpedientes()
     {
@@ -618,9 +732,40 @@ else
                 expedientes[j] = expedientes[j + 1];
                 expedientes[j + 1] = auxiliar;
             }
+         }
+    }
+    }
+    
+static void OrdenarPorCodigo()
+{
+    for (int i = 0; i < cantidad - 1; i++)
+    {
+        for (int j = 0; j < cantidad - i - 1; j++)
+        {
+            string[] datos1 = expedientes[j].Split('|');
+            string[] datos2 = expedientes[j + 1].Split('|');
+
+            string codigo1 = datos1.Length >= 13 ? datos1[12] : "";
+            string codigo2 = datos2.Length >= 13 ? datos2[12] : "";
+
+            int comparacion = string.Compare(
+                codigo1,
+                codigo2,
+                StringComparison.OrdinalIgnoreCase
+            );
+
+            if (comparacion > 0)
+            {
+                string auxiliar = expedientes[j];
+                expedientes[j] = expedientes[j + 1];
+                expedientes[j + 1] = auxiliar;
+            }
         }
     }
 }
+
+
+
 
 static void OrdenarExpedientes()
 {
@@ -630,21 +775,47 @@ static void OrdenarExpedientes()
         return;
     }
 
-    OrdenarPorBurbuja();
+    Console.WriteLine("\n===== ORDENAR EXPEDIENTES =====");
+    Console.WriteLine("1. Ordenar alfabéticamente");
+    Console.WriteLine("2. Ordenar por código de expediente");
+    Console.WriteLine("0. Regresar");
 
-    if (GuardarExpedientes())
+    int opcionOrden = LeerEntero("Seleccione una opción: ");
+
+    if (opcionOrden == 0)
+        return;
+
+    if (opcionOrden == 1)
     {
-        Console.WriteLine(
-            "Alumnos ordenados alfabéticamente mediante burbuja."
-        );
+        OrdenarPorBurbuja();
+    }
+    else if (opcionOrden == 2)
+    {
+        OrdenarPorCodigo();
     }
     else
     {
-        Console.WriteLine(
-            "Se ordenaron en memoria, pero no se pudo guardar el archivo."
-        );
+        Console.WriteLine("Opción inválida.");
+        return;
     }
+
+    if (!GuardarExpedientes())
+    {
+        Console.WriteLine("No se pudo guardar el orden.");
+        return;
+    }
+
+    Console.WriteLine("\n===== EXPEDIENTES ORDENADOS =====");
+
+    for (int i = 0; i < cantidad; i++)
+    {
+        Console.WriteLine("\nAlumno N° " + (i + 1));
+        MostrarExpediente(expedientes[i]);
+    }
+
+    Console.WriteLine("\nTotal de alumnos: " + cantidad);
 }
+
 
     // MÓDULO DE ARCHIVOS
 
@@ -687,9 +858,11 @@ static void OrdenarExpedientes()
                 string[] datos = registro.Split('|');
 
                 // Comprueba la estructura antes de cargar el registro.
-               if ((datos.Length != 11 && datos.Length != 12 &&
-                    datos.Length != 13 && datos.Length != 15 &&
-                    datos.Length != 16) ||
+               
+                    if ((datos.Length != 11 && datos.Length != 12 &&
+                      datos.Length != 13 && datos.Length != 15 &&
+                      datos.Length != 16 && datos.Length != 19) ||
+
                     !int.TryParse(datos[3], out int grado) ||
                     grado < 1 || grado > 6 ||
                     (datos[4] != "1" && datos[4] != "2") ||
@@ -848,6 +1021,7 @@ if (!ValidarTelefono(datos[5]))
     }
 }
 
+
 static void ReporteAlumnos()
 {
     if (cantidad == 0)
@@ -856,38 +1030,44 @@ static void ReporteAlumnos()
         return;
     }
 
-    // Ordena automáticamente antes de mostrar el reporte.
     OrdenarPorBurbuja();
 
     int registrados = 0;
     int observados = 0;
+    int confirmados = 0;
+    int pendientes = 0;
 
-    Console.WriteLine("\n===== REPORTE DE ALUMNOS =====");
-    Console.WriteLine("Orden alfabético por nombre completo.");
-    Console.WriteLine("Método utilizado: burbuja.");
+    Console.WriteLine("\n===== REPORTE GENERAL DE ALUMNOS =====");
 
     for (int i = 0; i < cantidad; i++)
     {
         string[] datos = expedientes[i].Split('|');
 
-        Console.WriteLine("\nAlumno N.º " + (i + 1));
+        Console.WriteLine("\nAlumno N° " + (i + 1));
         MostrarExpediente(expedientes[i]);
 
         if (datos[10] == "REGISTRADO")
-        {
             registrados++;
-        }
         else if (datos[10] == "OBSERVADO")
-        {
             observados++;
+
+        if (datos.Length >= 16)
+        {
+            if (datos[15] == "CONFIRMADA")
+                confirmados++;
+            else if (datos[15] == "PENDIENTE")
+                pendientes++;
         }
     }
 
-    Console.WriteLine("\n===== TOTALES =====");
+    Console.WriteLine("\n===== RESUMEN GENERAL =====");
     Console.WriteLine("Total de alumnos: " + cantidad);
     Console.WriteLine("Expedientes registrados: " + registrados);
     Console.WriteLine("Expedientes observados: " + observados);
+    Console.WriteLine("Matrículas confirmadas: " + confirmados);
+    Console.WriteLine("Matrículas pendientes: " + pendientes);
 }
+
 static bool AsignarCodigosAnteriores()
 {
     bool hayPendientes = false;
@@ -1166,11 +1346,13 @@ static void ActualizarEstadoMatricula(string nuevoEstado)
 }
 
 
+
 static bool NormalizarEstadosMatricula()
 {
     string[] respaldo = new string[cantidad];
-
     Array.Copy(expedientes, respaldo, cantidad);
+
+    bool huboCambios = false;
 
     for (int i = 0; i < cantidad; i++)
     {
@@ -1179,12 +1361,14 @@ static bool NormalizarEstadosMatricula()
         if (datos.Length == 13)
         {
             expedientes[i] += "|No registrada|N|PENDIENTE";
+            huboCambios = true;
         }
         else if (datos.Length == 15)
         {
             expedientes[i] += "|PENDIENTE";
+            huboCambios = true;
         }
-        else if (datos.Length != 16)
+        else if (datos.Length != 16 && datos.Length != 19)
         {
             Console.WriteLine(
                 "Se encontró un expediente con formato incorrecto."
@@ -1193,15 +1377,134 @@ static bool NormalizarEstadosMatricula()
             Array.Copy(respaldo, expedientes, cantidad);
             return false;
         }
+
+        datos = expedientes[i].Split('|');
+
+        if (datos.Length == 16)
+        {
+            expedientes[i] += "|SIN FECHA|SIN FECHA|SIN FECHA";
+            huboCambios = true;
+        }
+        else if (datos.Length == 19)
+        {
+            for (int j = 16; j <= 18; j++)
+            {
+                string valor = datos[j];
+
+                if (valor == "SIN FECHA" ||
+                    (j == 18 && valor == "NO APLICA"))
+                {
+                    continue;
+                }
+
+                if (!DateTime.TryParseExact(
+                    valor,
+                    "yyyy-MM-dd",
+                    System.Globalization.CultureInfo.InvariantCulture,
+                    System.Globalization.DateTimeStyles.None,
+                    out _))
+                {
+                    Console.WriteLine(
+                        "El expediente contiene una fecha inválida."
+                    );
+
+                    Array.Copy(respaldo, expedientes, cantidad);
+                    return false;
+                }
+            }
+        }
     }
 
-    if (!GuardarExpedientes())
+    if (huboCambios && !GuardarExpedientes())
     {
         Array.Copy(respaldo, expedientes, cantidad);
         return false;
     }
 
     return true;
+}
+
+
+static void BuscarPorNivel()
+{
+    if (cantidad == 0)
+    {
+        Console.WriteLine("No hay alumnos registrados.");
+        return;
+    }
+
+    Console.WriteLine("\n===== BUSCAR ALUMNOS POR NIVEL =====");
+    Console.WriteLine("1. Inicial");
+    Console.WriteLine("2. Primaria");
+    Console.WriteLine("3. Secundaria");
+    Console.WriteLine("0. Regresar");
+
+    Console.Write("Seleccione el nivel: ");
+
+    string nivel = Console.ReadLine() ?? "";
+
+    if (nivel == "0")
+        return;
+
+    if (nivel != "1" && nivel != "2" && nivel != "3")
+    {
+        Console.WriteLine("Opción no válida.");
+        return;
+    }
+
+    string nombreNivel = "";
+
+    switch (nivel)
+    {
+        case "1":
+            nombreNivel = "Inicial";
+            break;
+        case "2":
+            nombreNivel = "Primaria";
+            break;
+        case "3":
+            nombreNivel = "Secundaria";
+            break;
+    }
+
+    int encontrados = 0;
+    int confirmados = 0;
+    int pendientes = 0;
+
+    Console.WriteLine("\n===== ALUMNOS DE " + nombreNivel.ToUpper() + " =====");
+
+    for (int i = 0; i < cantidad; i++)
+    {
+        string[] datos = expedientes[i].Split('|');
+
+        if (datos.Length >= 12 && datos[11] == nivel)
+        {
+            encontrados++;
+
+            MostrarExpediente(expedientes[i]);
+
+            if (datos.Length >= 16)
+            {
+                if (datos[15] == "CONFIRMADA")
+                    confirmados++;
+                else if (datos[15] == "PENDIENTE")
+                    pendientes++;
+            }
+
+            Console.WriteLine("--------------------------------");
+        }
+    }
+
+    if (encontrados == 0)
+    {
+        Console.WriteLine("No hay alumnos registrados en este nivel.");
+    }
+    else
+    {
+        Console.WriteLine("\nTotal de alumnos: " + encontrados);
+        Console.WriteLine("Matrículas confirmadas: " + confirmados);
+        Console.WriteLine("Matrículas pendientes: " + pendientes);
+    }
 }
 
 
