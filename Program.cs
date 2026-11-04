@@ -56,7 +56,9 @@ Console.WriteLine("Ruta del contador: " +
         Console.WriteLine("6. Confirmar matrícula");
         Console.WriteLine("7. Cancelar matrícula");
         Console.WriteLine("8. Buscar alumnos por nivel educativo");
-        Console.WriteLine("9. Salir");
+        Console.WriteLine("9. Subsanar documentos");
+        Console.WriteLine("10. Regularizar fechas");
+        Console.WriteLine("11. Salir");
 
 
         opcion = LeerEntero("Seleccione una opción: ");
@@ -96,15 +98,22 @@ Console.WriteLine("Ruta del contador: " +
     break;
 
     case 9:
-        Console.WriteLine("Programa finalizado.");
-        break;
+    SubsanarDocumentos();
+    break;
 
+   case 10:
+    RegularizarFechas();
+    break;
+
+ case 11:
+    Console.WriteLine("Programa finalizado.");
+    break;
     default:
         Console.WriteLine("Seleccione una opción del 1 al 9.");
         break;
 }
 
-   } while (opcion != 9);
+   } while (opcion != 11);
 }
 
     // MÓDULO DE ENTRADA DE DATOS
@@ -228,9 +237,27 @@ static bool VerificarVacante(int nivel, int grado, int turno)
         bool mismoGrado = datos[3] == grado.ToString();
         bool mismoTurno = datos[4] == turno.ToString();
 
-        bool matriculaActiva =
-            datos[15] == "PENDIENTE" ||
-            datos[15] == "CONFIRMADA";
+        
+        bool matriculaActiva = datos[15] == "CONFIRMADA";
+
+        if (datos[15] == "PENDIENTE")
+        {
+            // Por seguridad, las reservas sin fecha siguen
+            // ocupando vacante hasta que se regularicen.
+            matriculaActiva = true;
+
+            if (datos.Length >= 19 &&
+                DateTime.TryParseExact(
+                    datos[17],
+                    "yyyy-MM-dd",
+                    System.Globalization.CultureInfo.InvariantCulture,
+                    System.Globalization.DateTimeStyles.None,
+                    out DateTime fechaVencimiento))
+            {
+                matriculaActiva = DateTime.Today <= fechaVencimiento;
+            }
+        }
+
 
         if (mismoNivel && mismoGrado &&
             mismoTurno && matriculaActiva)
@@ -538,8 +565,11 @@ if (codigoAlumno == "")
             codigoAlumno,
             seccion,
             discapacidad,
-            "PENDIENTE"
-        );
+            "PENDIENTE",
+            fechaRegistro.ToString("yyyy-MM-dd"),
+            fechaReserva.ToString("yyyy-MM-dd"),
+            fechaSubsanacion
+            );
 
         expedientes[cantidad] = registro;
         cantidad++;
@@ -561,7 +591,7 @@ if (codigoAlumno == "")
         {
             Console.WriteLine("Matrícula registrada correctamente.");
             Console.WriteLine("Vacante reservada.");
-            Console.WriteLine("Generando constancia de matrícula...");
+            Console.WriteLine("La constancia se generará al confirmar la matrícula.");
         }
         else
         {
@@ -1267,6 +1297,287 @@ static bool ValidarDni(string dni)
     return true;
 }
 
+static void RegularizarFechas()
+{
+    Console.WriteLine("\n===== REGULARIZAR FECHAS =====");
+
+    string dni = LeerTexto("Ingrese DNI del alumno: ");
+
+    for (int i = 0; i < cantidad; i++)
+    {
+        string[] datos = expedientes[i].Split('|');
+
+        if (datos[0] != dni)
+            continue;
+
+        if (datos.Length != 19)
+        {
+            Console.WriteLine(
+                "El expediente no tiene el formato de 19 campos."
+            );
+            return;
+        }
+
+        if (datos[16] != "SIN FECHA" ||
+            datos[17] != "SIN FECHA")
+        {
+            Console.WriteLine(
+                "Este expediente ya tiene fechas registradas."
+            );
+            return;
+        }
+
+        if (datos[15] != "PENDIENTE")
+        {
+            Console.WriteLine(
+                "Solo se regularizan matrículas pendientes."
+            );
+            return;
+        }
+
+        Console.WriteLine("Alumno: " + datos[2]);
+        Console.WriteLine("Código: " + datos[12]);
+
+        bool confirmar = LeerLogico(
+            "¿Desea renovar la reserva por 7 días desde hoy?"
+        );
+
+        if (!confirmar)
+        {
+            Console.WriteLine("Operación cancelada.");
+            return;
+        }
+
+        DateTime hoy = DateTime.Today;
+        DateTime vencimiento = hoy.AddDays(7);
+
+        string registroAnterior = expedientes[i];
+
+        // No inventamos la fecha original de registro.
+        datos[16] = "SIN FECHA";
+
+        // Nueva fecha de vencimiento de la reserva.
+        datos[17] = vencimiento.ToString("yyyy-MM-dd");
+
+        // Fecha límite para documentos observados.
+        datos[18] = datos[10] == "OBSERVADO"
+            ? vencimiento.ToString("yyyy-MM-dd")
+            : "NO APLICA";
+
+        expedientes[i] = string.Join("|", datos);
+
+        if (!GuardarExpedientes())
+        {
+            expedientes[i] = registroAnterior;
+            Console.WriteLine(
+                "ERROR: No se pudieron guardar las fechas."
+            );
+            return;
+        }
+
+        Console.WriteLine("\nFECHAS REGULARIZADAS.");
+        Console.WriteLine(
+            "Fecha original de registro: No disponible"
+        );
+        Console.WriteLine(
+            "Nueva reserva válida hasta: " +
+            vencimiento.ToString("dd/MM/yyyy")
+        );
+
+        return;
+    }
+
+    Console.WriteLine("No se encontró al alumno.");
+}
+
+
+static void SubsanarDocumentos()
+{
+    Console.WriteLine("\n===== SUBSANAR DOCUMENTOS =====");
+
+    string dni = LeerTexto("Ingrese DNI del alumno: ");
+
+    for (int i = 0; i < cantidad; i++)
+    {
+        string[] datos = expedientes[i].Split('|');
+
+        if (datos[0] != dni)
+            continue;
+
+        if (datos.Length < 19)
+        {
+            Console.WriteLine(
+                "El expediente no tiene fechas válidas registradas."
+            );
+            return;
+        }
+
+        if (datos[15] != "PENDIENTE")
+        {
+            Console.WriteLine(
+                "La matrícula no está pendiente."
+            );
+            return;
+        }
+
+        if (datos[10] != "OBSERVADO")
+        {
+            Console.WriteLine(
+                "El alumno no tiene documentos pendientes."
+            );
+            return;
+        }
+
+        bool fechaValida = DateTime.TryParseExact(
+            datos[18],
+            "yyyy-MM-dd",
+            System.Globalization.CultureInfo.InvariantCulture,
+            System.Globalization.DateTimeStyles.None,
+            out DateTime fechaLimite
+        );
+
+        if (!fechaValida)
+        {
+            Console.WriteLine(
+                "La fecha de subsanación es inválida."
+            );
+            return;
+        }
+
+        if (DateTime.Today > fechaLimite)
+        {
+            Console.WriteLine(
+                "PLAZO VENCIDO. No se pueden subsanar documentos."
+            );
+            return;
+        }
+
+        Console.WriteLine("Alumno: " + datos[2]);
+        Console.WriteLine(
+            "Fecha límite: " + fechaLimite.ToString("dd/MM/yyyy")
+        );
+
+        bool documentos = LeerLogico(
+            "¿Presenta los documentos obligatorios?"
+        );
+
+        bool salud = LeerLogico(
+            "¿Presenta certificado de salud?"
+        );
+
+        bool psicologia = LeerLogico(
+            "¿Presenta certificado psicológico?"
+        );
+
+        string registroAnterior = expedientes[i];
+
+        datos[7] = documentos.ToString();
+        datos[8] = salud.ToString();
+        datos[9] = psicologia.ToString();
+
+        datos[10] = DeterminarEstado(
+            documentos, salud, psicologia
+        );
+
+        if (datos[10] == "REGISTRADO")
+        {
+            datos[18] = "NO APLICA";
+        }
+
+        expedientes[i] = string.Join("|", datos);
+
+        if (!GuardarExpedientes())
+        {
+            expedientes[i] = registroAnterior;
+            Console.WriteLine(
+                "No se pudieron guardar los cambios."
+            );
+            return;
+        }
+
+        Console.WriteLine("\nDocumentos actualizados correctamente.");
+        Console.WriteLine("Estado del expediente: " + datos[10]);
+
+        if (datos[10] == "REGISTRADO")
+        {
+            Console.WriteLine(
+                "El alumno ya puede solicitar la confirmación de matrícula."
+            );
+        }
+        else
+        {
+            Console.WriteLine(
+                "Todavía tiene documentos pendientes."
+            );
+        }
+
+        return;
+    }
+
+    Console.WriteLine("No se encontró al alumno.");
+}
+
+static void GenerarConstancia(string[] datos)
+{
+    try
+    {
+        if (datos.Length < 19 || datos[15] != "CONFIRMADA")
+        {
+            Console.WriteLine("No se puede generar la constancia.");
+            return;
+        }
+
+        string carpeta = "constancias";
+        Directory.CreateDirectory(carpeta);
+
+        string codigo = datos[12];
+        string ruta = Path.Combine(
+            carpeta,
+            "Constancia_" + codigo + ".txt"
+        );
+
+        string turno = datos[4] == "1" ? "Mañana" : "Tarde";
+
+        string nivel = datos[11] switch
+        {
+            "1" => "Inicial",
+            "2" => "Primaria",
+            "3" => "Secundaria",
+            _ => "No especificado"
+        };
+
+        string contenido =
+            "========================================\n" +
+            "       CONSTANCIA DE MATRÍCULA\n" +
+            "========================================\n\n" +
+            "Código: " + codigo + "\n" +
+            "Alumno: " + datos[2] + "\n" +
+            "DNI: " + datos[0] + "\n" +
+            "Nivel: " + nivel + "\n" +
+            "Grado / Edad: " + datos[3] + "\n" +
+            "Sección: " + datos[13] + "\n" +
+            "Turno: " + turno + "\n" +
+            "Fecha de registro: " + datos[16] + "\n" +
+            "Fecha de emisión: " +
+                DateTime.Today.ToString("dd/MM/yyyy") + "\n" +
+            "Estado de matrícula: CONFIRMADA\n\n" +
+            "========================================\n";
+
+        File.WriteAllText(ruta, contenido, Encoding.UTF8);
+
+        Console.WriteLine("\nCONSTANCIA GENERADA CORRECTAMENTE.");
+        Console.WriteLine("Ubicación: " + Path.GetFullPath(ruta));
+    }
+    catch (Exception ex) when (
+        ex is IOException ||
+        ex is UnauthorizedAccessException)
+    {
+        Console.WriteLine(
+            "ERROR al generar la constancia: " + ex.Message
+        );
+    }
+}
+
 static void ConfirmarMatricula()
 {
     ActualizarEstadoMatricula("CONFIRMADA");
@@ -1344,6 +1655,85 @@ static void ActualizarEstadoMatricula(string nuevoEstado)
                 return;
             }
 
+if (nuevoEstado == "CONFIRMADA")
+{
+    if (datos.Length < 19 || datos[17] == "SIN FECHA")
+    {
+        Console.WriteLine(
+            "No se puede confirmar: el expediente no tiene una fecha de reserva válida."
+        );
+        return;
+    }
+
+    bool fechaValida = DateTime.TryParseExact(
+        datos[17],
+        "yyyy-MM-dd",
+        System.Globalization.CultureInfo.InvariantCulture,
+        System.Globalization.DateTimeStyles.None,
+        out DateTime fechaLimite
+    );
+
+    if (!fechaValida)
+    {
+        Console.WriteLine("ERROR: Fecha de reserva inválida.");
+        return;
+    }
+
+    if (DateTime.Today > fechaLimite)
+    {
+        Console.WriteLine("\nMATRÍCULA RECHAZADA.");
+        Console.WriteLine("La reserva de 7 días ha vencido.");
+        Console.WriteLine(
+            "Fecha límite: " + fechaLimite.ToString("dd/MM/yyyy")
+        );
+        return;
+    }
+
+   
+if (datos[10] == "OBSERVADO")
+{
+    bool fechaSubsanacionValida = DateTime.TryParseExact(
+        datos[18],
+        "yyyy-MM-dd",
+        System.Globalization.CultureInfo.InvariantCulture,
+        System.Globalization.DateTimeStyles.None,
+        out DateTime fechaLimiteSubsanacion
+    );
+
+    if (!fechaSubsanacionValida)
+    {
+        Console.WriteLine(
+            "ERROR: El expediente no tiene una fecha de subsanación válida."
+        );
+        return;
+    }
+
+    if (DateTime.Today > fechaLimiteSubsanacion)
+    {
+        Console.WriteLine("\nPLAZO DE SUBSANACIÓN VENCIDO.");
+        Console.WriteLine(
+            "Fecha límite: " +
+            fechaLimiteSubsanacion.ToString("dd/MM/yyyy")
+        );
+        Console.WriteLine(
+            "No se puede confirmar la matrícula."
+        );
+        return;
+    }
+
+    Console.WriteLine("\nEXPEDIENTE OBSERVADO.");
+    Console.WriteLine(
+        "Plazo de subsanación vigente hasta: " +
+        fechaLimiteSubsanacion.ToString("dd/MM/yyyy")
+    );
+    Console.WriteLine(
+        "Debe completar los documentos antes de confirmar la matrícula."
+    );
+    return;
+}
+}
+
+
             string registroAnterior = expedientes[i];
 
             datos[15] = nuevoEstado;
@@ -1358,6 +1748,10 @@ static void ActualizarEstadoMatricula(string nuevoEstado)
                 );
                 return;
             }
+            if (nuevoEstado == "CONFIRMADA")
+{
+    GenerarConstancia(datos);
+}
 
             Console.WriteLine("\n===== MATRÍCULA ACTUALIZADA =====");
             Console.WriteLine("Alumno: " + datos[2]);

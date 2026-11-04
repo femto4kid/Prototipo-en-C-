@@ -1,0 +1,16 @@
+﻿========================================
+       CONSTANCIA DE MATRÍCULA
+========================================
+
+Código: ALU008
+Alumno: messias
+DNI: 60192068
+Nivel: Secundaria
+Grado / Edad: 1
+Sección: A
+Turno: Mañana
+Fecha de registro: SIN FECHA
+Fecha de emisión: 03/11/2026
+Estado de matrícula: CONFIRMADA
+
+========================================
