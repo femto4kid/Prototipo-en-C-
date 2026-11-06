@@ -16,6 +16,11 @@ class Program
     static void Main()
 {
     Console.OutputEncoding = Encoding.UTF8;
+    if (!IniciarSesion())
+{
+    Console.WriteLine("\nPrograma finalizado por seguridad.");
+    return;
+}
     Console.WriteLine("Carpeta de trabajo: " +
     Directory.GetCurrentDirectory());
 
@@ -115,7 +120,94 @@ Console.WriteLine("Ruta del contador: " +
 
    } while (opcion != 11);
 }
+static bool IniciarSesion()
+{
+    const int MAX_INTENTOS = 3;
 
+    // Credenciales configuradas mediante variables de entorno.
+        string usuarioCorrecto = "admin";
+        string contrasenaCorrecta = "123456";
+
+    if (string.IsNullOrWhiteSpace(usuarioCorrecto) ||
+        string.IsNullOrEmpty(contrasenaCorrecta))
+    {
+        Console.WriteLine(
+            "ERROR: No se han configurado las credenciales del sistema."
+        );
+        return false;
+    }
+
+    Console.WriteLine("========================================");
+    Console.WriteLine("       SISTEMA DE MATRÍCULAS");
+    Console.WriteLine("          INICIO DE SESIÓN");
+    Console.WriteLine("========================================");
+
+    for (int intento = 1; intento <= MAX_INTENTOS; intento++)
+    {
+        Console.WriteLine();
+
+        string usuario = LeerTexto("Usuario: ");
+
+        Console.Write("Contraseña: ");
+        string contrasena = LeerContrasena();
+
+        if (usuario == usuarioCorrecto &&
+            contrasena == contrasenaCorrecta)
+        {
+            Console.WriteLine("\nACCESO AUTORIZADO.");
+            Console.WriteLine("Bienvenido al sistema.");
+
+            return true;
+        }
+
+        int restantes = MAX_INTENTOS - intento;
+
+        Console.WriteLine("\nUsuario o contraseña incorrectos.");
+
+        if (restantes > 0)
+        {
+            Console.WriteLine(
+                "Intentos restantes: " + restantes
+            );
+        }
+    }
+
+    Console.WriteLine("\nACCESO BLOQUEADO.");
+    Console.WriteLine("Se agotaron los 3 intentos.");
+
+    return false;
+}
+static string LeerContrasena()
+{
+    StringBuilder contrasena = new StringBuilder();
+
+    while (true)
+    {
+        ConsoleKeyInfo tecla = Console.ReadKey(true);
+
+        if (tecla.Key == ConsoleKey.Enter)
+        {
+            Console.WriteLine();
+            break;
+        }
+
+        if (tecla.Key == ConsoleKey.Backspace)
+        {
+            if (contrasena.Length > 0)
+            {
+                contrasena.Length--;
+                Console.Write("\b \b");
+            }
+        }
+        else if (!char.IsControl(tecla.KeyChar))
+        {
+            contrasena.Append(tecla.KeyChar);
+            Console.Write("*");
+        }
+    }
+
+    return contrasena.ToString();
+}
     // MÓDULO DE ENTRADA DE DATOS
 
     static string LeerTexto(string mensaje)
@@ -336,9 +428,35 @@ while (true)
 }
 
 
-        string dniApoderado = LeerTexto(
-            "Ingrese DNI del apoderado: "
-        );
+       // DATOS DEL PADRE
+Console.WriteLine("\n===== DATOS DEL PADRE =====");
+
+string nombrePadre = LeerTexto("Nombre completo del padre: ");
+string dniPadre = LeerTexto("DNI del padre: ");
+string telefonoPadre = LeerTelefono("Teléfono del padre: ");
+
+
+// DATOS DE LA MADRE
+Console.WriteLine("\n===== DATOS DE LA MADRE =====");
+
+string nombreMadre = LeerTexto("Nombre completo de la madre: ");
+string dniMadre = LeerTexto("DNI de la madre: ");
+string telefonoMadre = LeerTelefono("Teléfono de la madre: ");
+
+
+// DATOS DEL APODERADO
+Console.WriteLine("\n===== DATOS DEL APODERADO =====");
+
+string nombreApoderado = LeerTexto("Nombre completo del apoderado: ");
+string dniApoderado = LeerTexto("DNI del apoderado: ");
+string telefonoApoderado = LeerTelefono("Teléfono del apoderado: ");
+
+
+// DATOS DE CONTACTO
+Console.WriteLine("\n===== CONTACTO Y DOMICILIO =====");
+
+string correo = LeerTexto("Correo electrónico de contacto: ");
+string direccion = LeerTexto("Dirección del domicilio: ");
 
         string nombre = LeerTexto(
             "Ingrese nombres completos del estudiante: "
@@ -359,6 +477,25 @@ do
     }
 
 } while (discapacidad != "S" && discapacidad != "N");
+
+
+// EXONERACIÓN DEL CURSO DE RELIGIÓN
+string exoneradoReligion;
+
+do
+{
+    exoneradoReligion = LeerTexto(
+        "¿Desea solicitar la exoneración del curso de Religión? (S/N): "
+    ).ToUpperInvariant();
+
+    if (exoneradoReligion != "S" && exoneradoReligion != "N")
+    {
+        Console.WriteLine(
+            "Respuesta inválida. Ingrese S para Sí o N para No."
+        );
+    }
+
+} while (exoneradoReligion != "S" && exoneradoReligion != "N");
        int nivel;
 
 do
@@ -453,31 +590,7 @@ do
 } while (turno != 1 && turno != 2);
 
 
-        string telefono;
-bool telefonoValido;
-
-do
-{
-    telefono = LeerTexto("Ingrese teléfono de contacto: ");
-    telefonoValido = telefono.Length == 9;
-
-    foreach (char digito in telefono)
-    {
-        if (digito < '0' || digito > '9')
-        {
-            telefonoValido = false;
-            break;
-        }
-    }
-
-    if (!telefonoValido)
-    {
-        Console.WriteLine(
-            "Teléfono inválido: debe contener exactamente 9 dígitos."
-        );
-    }
-
-} while (!telefonoValido);
+       string telefono = LeerTelefono("Ingrese teléfono de contacto: ");
         
 
         string colegioProcedencia = LeerTexto(
@@ -568,7 +681,8 @@ if (codigoAlumno == "")
             "PENDIENTE",
             fechaRegistro.ToString("yyyy-MM-dd"),
             fechaReserva.ToString("yyyy-MM-dd"),
-            fechaSubsanacion
+            fechaSubsanacion,
+            exoneradoReligion == "S" ? "SI" : "NO"
             );
 
         expedientes[cantidad] = registro;
@@ -661,6 +775,13 @@ else
     Console.WriteLine("Sección: No registrada");
     Console.WriteLine("Discapacidad: No registrada");
 }
+// MOSTRAR EXONERACIÓN DE RELIGIÓN
+Console.WriteLine(
+    "Exoneración de Religión: " +
+    (datos.Length >= 20
+        ? (datos[19] == "SI" ? "Solicitada" : "No solicitada")
+        : "No registrada")
+);
         Console.WriteLine("Teléfono: " + datos[5]);
         Console.WriteLine("Colegio de procedencia: " + datos[6]);
         Console.WriteLine("Estado del expediente: " + datos[10]);
@@ -916,8 +1037,9 @@ static void OrdenarExpedientes()
                 // Comprueba la estructura antes de cargar el registro.
                
                     if ((datos.Length != 11 && datos.Length != 12 &&
-                      datos.Length != 13 && datos.Length != 15 &&
-                      datos.Length != 16 && datos.Length != 19) ||
+                    datos.Length != 13 && datos.Length != 15 &&
+                    datos.Length != 16 && datos.Length != 19 &&
+                    datos.Length != 20) ||
 
                     !int.TryParse(datos[3], out int grado) ||
                     grado < 1 || grado > 6 ||
@@ -1264,7 +1386,7 @@ static bool ExisteDni(string dni)
 }
 static bool ValidarTelefono(string telefono)
 {
-    if (telefono.Length != 9)
+    if (telefono.Length != 9 || telefono[0] != '9')
     {
         return false;
     }
@@ -1278,6 +1400,25 @@ static bool ValidarTelefono(string telefono)
     }
 
     return true;
+}
+static string LeerTelefono(string mensaje)
+{
+    string telefono;
+
+    do
+    {
+        telefono = LeerTexto(mensaje);
+
+        if (!ValidarTelefono(telefono))
+        {
+            Console.WriteLine(
+                "ERROR: El número debe empezar con 9 y tener exactamente 9 dígitos."
+            );
+        }
+
+    } while (!ValidarTelefono(telefono));
+
+    return telefono;
 }
 static bool ValidarDni(string dni)
 {
@@ -1310,10 +1451,10 @@ static void RegularizarFechas()
         if (datos[0] != dni)
             continue;
 
-        if (datos.Length != 19)
+        if (datos.Length != 19 && datos.Length != 20)
         {
             Console.WriteLine(
-                "El expediente no tiene el formato de 19 campos."
+                "El expediente no tiene el formato actualizado."
             );
             return;
         }
@@ -1537,6 +1678,9 @@ static void GenerarConstancia(string[] datos)
         );
 
         string turno = datos[4] == "1" ? "Mañana" : "Tarde";
+        string religion = datos.Length >= 20
+        ? (datos[19] == "SI" ? "SÍ, SOLICITADA" : "NO SOLICITADA")
+        : "NO REGISTRADA";
 
         string nivel = datos[11] switch
         {
@@ -1554,9 +1698,10 @@ static void GenerarConstancia(string[] datos)
             "Alumno: " + datos[2] + "\n" +
             "DNI: " + datos[0] + "\n" +
             "Nivel: " + nivel + "\n" +
-            "Grado / Edad: " + datos[3] + "\n" +
+            "Grado: " + datos[3] + "\n" + 
             "Sección: " + datos[13] + "\n" +
             "Turno: " + turno + "\n" +
+            "Exoneración de Religión: " + religion + "\n" +
             "Fecha de registro: " + datos[16] + "\n" +
             "Fecha de emisión: " +
                 DateTime.Today.ToString("dd/MM/yyyy") + "\n" +
@@ -1788,7 +1933,9 @@ static bool NormalizarEstadosMatricula()
             expedientes[i] += "|PENDIENTE";
             huboCambios = true;
         }
-        else if (datos.Length != 16 && datos.Length != 19)
+        else if (datos.Length != 16 &&
+         datos.Length != 19 &&
+         datos.Length != 20)
         {
             Console.WriteLine(
                 "Se encontró un expediente con formato incorrecto."
@@ -1805,7 +1952,7 @@ static bool NormalizarEstadosMatricula()
             expedientes[i] += "|SIN FECHA|SIN FECHA|SIN FECHA";
             huboCambios = true;
         }
-        else if (datos.Length == 19)
+        else if (datos.Length == 19 || datos.Length == 20)
         {
             for (int j = 16; j <= 18; j++)
             {
