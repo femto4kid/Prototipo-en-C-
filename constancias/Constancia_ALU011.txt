@@ -5,7 +5,7 @@
 
                  DATOS DEL EXPEDIENTE
 ----------------------------------------------------------------
-Código del alumno : ALU010
+Código del alumno : ALU011
 Fecha de registro : 2026-11-07
 Fecha de emisión  : 07/11/2026
 Estado matrícula  : CONFIRMADA
@@ -13,8 +13,8 @@ Estado matrícula  : CONFIRMADA
                  DATOS DEL ESTUDIANTE
 ----------------------------------------------------------------
 Nombre completo   : lamine yamalon
-DNI               : 60583269
-Dirección         : No registrada
+DNI               : 60552366
+Dirección         : av.insurgentes
 Exoneración de Religión: NO SOLICITADA
 
                  ASIGNACIÓN ACADÉMICA
@@ -27,26 +27,26 @@ Colegio anterior  : america
 
                  DATOS DEL PADRE
 ----------------------------------------------------------------
-Nombre completo   : No registrado
-DNI               : No registrado
-Teléfono          : No registrado
+Nombre completo   : sixseven
+DNI               : 67676767
+Teléfono          : 967676767
 
                  DATOS DE LA MADRE
 ----------------------------------------------------------------
-Nombre completo   : No registrado
-DNI               : No registrado
-Teléfono          : No registrado
+Nombre completo   : martina
+DNI               : 45547898
+Teléfono          : 988969877
 
                  DATOS DEL APODERADO
 ----------------------------------------------------------------
-Nombre completo   : No registrado
-DNI               : 45456535
-Teléfono          : No registrado
+Nombre completo   : el dibu
+DNI               : 15326988
+Teléfono          : 966365410
 
                  CONTACTO FAMILIAR
 ----------------------------------------------------------------
-Correo electrónico: No registrado
-Dirección         : No registrada
+Correo electrónico: elmejordelmundo@gmail.com
+Dirección         : av.insurgentes
 
                  DOCUMENTACIÓN
 ----------------------------------------------------------------

@@ -432,7 +432,7 @@ while (true)
 Console.WriteLine("\n===== DATOS DEL PADRE =====");
 
 string nombrePadre = LeerTexto("Nombre completo del padre: ");
-string dniPadre = LeerTexto("DNI del padre: ");
+string dniPadre = LeerDNI("DNI del padre: ");
 string telefonoPadre = LeerTelefono("Teléfono del padre: ");
 
 
@@ -440,7 +440,7 @@ string telefonoPadre = LeerTelefono("Teléfono del padre: ");
 Console.WriteLine("\n===== DATOS DE LA MADRE =====");
 
 string nombreMadre = LeerTexto("Nombre completo de la madre: ");
-string dniMadre = LeerTexto("DNI de la madre: ");
+string dniMadre = LeerDNI("DNI de la madre: ");
 string telefonoMadre = LeerTelefono("Teléfono de la madre: ");
 
 
@@ -448,14 +448,14 @@ string telefonoMadre = LeerTelefono("Teléfono de la madre: ");
 Console.WriteLine("\n===== DATOS DEL APODERADO =====");
 
 string nombreApoderado = LeerTexto("Nombre completo del apoderado: ");
-string dniApoderado = LeerTexto("DNI del apoderado: ");
+string dniApoderado = LeerDNI("DNI del apoderado: ");
 string telefonoApoderado = LeerTelefono("Teléfono del apoderado: ");
 
 
 // DATOS DE CONTACTO
 Console.WriteLine("\n===== CONTACTO Y DOMICILIO =====");
 
-string correo = LeerTexto("Correo electrónico de contacto: ");
+string correo = LeerCorreo("Correo electrónico de contacto: ");
 string direccion = LeerTexto("Dirección del domicilio: ");
 
         string nombre = LeerTexto(
@@ -682,7 +682,22 @@ if (codigoAlumno == "")
             fechaRegistro.ToString("yyyy-MM-dd"),
             fechaReserva.ToString("yyyy-MM-dd"),
             fechaSubsanacion,
-            exoneradoReligion == "S" ? "SI" : "NO"
+            exoneradoReligion == "S" ? "SI" : "NO",
+
+            nombrePadre.Replace("|", " "),
+            dniPadre,
+            telefonoPadre,
+
+            nombreMadre.Replace("|", " "),
+            dniMadre,
+            telefonoMadre,
+
+            nombreApoderado.Replace("|", " "),
+            dniApoderado,
+            telefonoApoderado,
+
+            correo.Replace("|", " "),
+            direccion.Replace("|", " ")
             );
 
         expedientes[cantidad] = registro;
@@ -1039,7 +1054,8 @@ static void OrdenarExpedientes()
                     if ((datos.Length != 11 && datos.Length != 12 &&
                     datos.Length != 13 && datos.Length != 15 &&
                     datos.Length != 16 && datos.Length != 19 &&
-                    datos.Length != 20) ||
+                    datos.Length != 20 &&
+                    datos.Length != 31) ||
 
                     !int.TryParse(datos[3], out int grado) ||
                     grado < 1 || grado > 6 ||
@@ -1420,6 +1436,63 @@ static string LeerTelefono(string mensaje)
 
     return telefono;
 }
+static string LeerDNI(string mensaje)
+{
+    string dni;
+
+    do
+    {
+        dni = LeerTexto(mensaje);
+
+        bool dniValido = dni.Length == 8;
+
+        foreach (char digito in dni)
+        {
+            if (digito < '0' || digito > '9')
+            {
+                dniValido = false;
+                break;
+            }
+        }
+
+        if (dniValido)
+        {
+            return dni;
+        }
+
+        Console.WriteLine(
+            "ERROR: El DNI debe contener exactamente 8 dígitos numéricos."
+        );
+
+    } while (true);
+}
+static string LeerCorreo(string mensaje)
+{
+    while (true)
+    {
+        string correo = LeerTexto(mensaje).Trim();
+
+        try
+        {
+            var direccion = new System.Net.Mail.MailAddress(correo);
+
+            if (direccion.Address == correo &&
+                correo.Contains('.') &&
+                !correo.Contains(' '))
+            {
+                return correo;
+            }
+        }
+        catch (FormatException)
+        {
+            // El correo no tiene un formato válido.
+        }
+
+        Console.WriteLine(
+            "ERROR: Ingrese un correo electrónico válido. Ejemplo: familia@gmail.com"
+        );
+    }
+}
 static bool ValidarDni(string dni)
 {
     if (dni.Length != 8 || dni[0] == '0')
@@ -1451,7 +1524,9 @@ static void RegularizarFechas()
         if (datos[0] != dni)
             continue;
 
-        if (datos.Length != 19 && datos.Length != 20)
+        if (datos.Length != 19 &&
+        datos.Length != 20 &&
+        datos.Length != 31)
         {
             Console.WriteLine(
                 "El expediente no tiene el formato actualizado."
@@ -1676,7 +1751,23 @@ static void GenerarConstancia(string[] datos)
             carpeta,
             "Constancia_" + codigo + ".txt"
         );
+        // DATOS FAMILIARES
+        bool tieneDatosFamiliares = datos.Length >= 31;
 
+        string nombrePadre = tieneDatosFamiliares ? datos[20] : "No registrado";
+        string dniPadre = tieneDatosFamiliares ? datos[21] : "No registrado";
+        string telefonoPadre = tieneDatosFamiliares ? datos[22] : "No registrado";
+
+        string nombreMadre = tieneDatosFamiliares ? datos[23] : "No registrado";
+        string dniMadre = tieneDatosFamiliares ? datos[24] : "No registrado";
+        string telefonoMadre = tieneDatosFamiliares ? datos[25] : "No registrado";
+
+        string nombreApoderado = tieneDatosFamiliares ? datos[26] : "No registrado";
+        string dniApoderado = tieneDatosFamiliares ? datos[27] : datos[1];
+        string telefonoApoderado = tieneDatosFamiliares ? datos[28] : "No registrado";
+
+        string correo = tieneDatosFamiliares ? datos[29] : "No registrado";
+        string direccion = tieneDatosFamiliares ? datos[30] : "No registrada";
         string turno = datos[4] == "1" ? "Mañana" : "Tarde";
         string religion = datos.Length >= 20
         ? (datos[19] == "SI" ? "SÍ, SOLICITADA" : "NO SOLICITADA")
@@ -1690,24 +1781,69 @@ static void GenerarConstancia(string[] datos)
             _ => "No especificado"
         };
 
-        string contenido =
-            "========================================\n" +
-            "       CONSTANCIA DE MATRÍCULA\n" +
-            "========================================\n\n" +
-            "Código: " + codigo + "\n" +
-            "Alumno: " + datos[2] + "\n" +
-            "DNI: " + datos[0] + "\n" +
-            "Nivel: " + nivel + "\n" +
-            "Grado: " + datos[3] + "\n" + 
-            "Sección: " + datos[13] + "\n" +
-            "Turno: " + turno + "\n" +
-            "Exoneración de Religión: " + religion + "\n" +
-            "Fecha de registro: " + datos[16] + "\n" +
-            "Fecha de emisión: " +
-                DateTime.Today.ToString("dd/MM/yyyy") + "\n" +
-            "Estado de matrícula: CONFIRMADA\n\n" +
-            "========================================\n";
+       string gradoTexto = nivel == "Inicial" ? "Edad" : "Grado";
 
+string contenido =
+    "================================================================\n" +
+    "                  SISTEMA DE MATRÍCULAS\n" +
+    "                 CONSTANCIA DE MATRÍCULA\n" +
+    "================================================================\n\n" +
+
+    "                 DATOS DEL EXPEDIENTE\n" +
+    "----------------------------------------------------------------\n" +
+    "Código del alumno : " + codigo + "\n" +
+    "Fecha de registro : " + datos[16] + "\n" +
+    "Fecha de emisión  : " + DateTime.Today.ToString("dd/MM/yyyy") + "\n" +
+    "Estado matrícula  : CONFIRMADA\n\n" +
+
+    "                 DATOS DEL ESTUDIANTE\n" +
+    "----------------------------------------------------------------\n" +
+    "Nombre completo   : " + datos[2] + "\n" +
+    "DNI               : " + datos[0] + "\n" +
+    "Dirección         : " + direccion + "\n" +
+    "Exoneración de Religión: " + religion + "\n\n" +
+
+    "                 ASIGNACIÓN ACADÉMICA\n" +
+    "----------------------------------------------------------------\n" +
+    "Nivel educativo   : " + nivel + "\n" +
+    gradoTexto.PadRight(18) + ": " + datos[3] + "\n" +
+    "Sección           : " + datos[13] + "\n" +
+    "Turno             : " + turno + "\n" +
+    "Colegio anterior  : " + datos[6] + "\n\n" +
+
+    "                 DATOS DEL PADRE\n" +
+    "----------------------------------------------------------------\n" +
+    "Nombre completo   : " + nombrePadre + "\n" +
+    "DNI               : " + dniPadre + "\n" +
+    "Teléfono          : " + telefonoPadre + "\n\n" +
+
+    "                 DATOS DE LA MADRE\n" +
+    "----------------------------------------------------------------\n" +
+    "Nombre completo   : " + nombreMadre + "\n" +
+    "DNI               : " + dniMadre + "\n" +
+    "Teléfono          : " + telefonoMadre + "\n\n" +
+
+    "                 DATOS DEL APODERADO\n" +
+    "----------------------------------------------------------------\n" +
+    "Nombre completo   : " + nombreApoderado + "\n" +
+    "DNI               : " + dniApoderado + "\n" +
+    "Teléfono          : " + telefonoApoderado + "\n\n" +
+
+    "                 CONTACTO FAMILIAR\n" +
+    "----------------------------------------------------------------\n" +
+    "Correo electrónico: " + correo + "\n" +
+    "Dirección         : " + direccion + "\n\n" +
+
+    "                 DOCUMENTACIÓN\n" +
+    "----------------------------------------------------------------\n" +
+    "Documentos obligatorios : " + (datos[7] == "True" ? "Presentados" : "Pendientes") + "\n" +
+    "Certificado de salud    : " + (datos[8] == "True" ? "Presentado" : "Pendiente") + "\n" +
+    "Certificado psicológico : " + (datos[9] == "True" ? "Presentado" : "Pendiente") + "\n\n" +
+
+    "================================================================\n" +
+    "        CONSTANCIA GENERADA POR EL SISTEMA DE MATRÍCULAS\n" +
+    "               Documento informativo del registro\n" +
+    "================================================================\n";
         File.WriteAllText(ruta, contenido, Encoding.UTF8);
 
         Console.WriteLine("\nCONSTANCIA GENERADA CORRECTAMENTE.");
@@ -1935,7 +2071,8 @@ static bool NormalizarEstadosMatricula()
         }
         else if (datos.Length != 16 &&
          datos.Length != 19 &&
-         datos.Length != 20)
+         datos.Length != 20 &&
+            datos.Length != 31)
         {
             Console.WriteLine(
                 "Se encontró un expediente con formato incorrecto."
@@ -1952,7 +2089,9 @@ static bool NormalizarEstadosMatricula()
             expedientes[i] += "|SIN FECHA|SIN FECHA|SIN FECHA";
             huboCambios = true;
         }
-        else if (datos.Length == 19 || datos.Length == 20)
+        else if (datos.Length == 19 ||
+         datos.Length == 20 ||
+         datos.Length == 31)
         {
             for (int j = 16; j <= 18; j++)
             {
