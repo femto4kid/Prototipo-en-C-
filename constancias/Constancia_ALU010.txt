@@ -1,0 +1,60 @@
+﻿================================================================
+                  SISTEMA DE MATRÍCULAS
+                 CONSTANCIA DE MATRÍCULA
+================================================================
+
+                 DATOS DEL EXPEDIENTE
+----------------------------------------------------------------
+Código del alumno : ALU010
+Fecha de registro : 2026-11-07
+Fecha de emisión  : 07/11/2026
+Estado matrícula  : CONFIRMADA
+
+                 DATOS DEL ESTUDIANTE
+----------------------------------------------------------------
+Nombre completo   : lamine yamalon
+DNI               : 60583269
+Dirección         : No registrada
+Exoneración de Religión: NO SOLICITADA
+
+                 ASIGNACIÓN ACADÉMICA
+----------------------------------------------------------------
+Nivel educativo   : Primaria
+Grado             : 3
+Sección           : A
+Turno             : Mañana
+Colegio anterior  : america
+
+                 DATOS DEL PADRE
+----------------------------------------------------------------
+Nombre completo   : No registrado
+DNI               : No registrado
+Teléfono          : No registrado
+
+                 DATOS DE LA MADRE
+----------------------------------------------------------------
+Nombre completo   : No registrado
+DNI               : No registrado
+Teléfono          : No registrado
+
+                 DATOS DEL APODERADO
+----------------------------------------------------------------
+Nombre completo   : No registrado
+DNI               : 45456535
+Teléfono          : No registrado
+
+                 CONTACTO FAMILIAR
+----------------------------------------------------------------
+Correo electrónico: No registrado
+Dirección         : No registrada
+
+                 DOCUMENTACIÓN
+----------------------------------------------------------------
+Documentos obligatorios : Presentados
+Certificado de salud    : Presentado
+Certificado psicológico : Presentado
+
+================================================================
+        CONSTANCIA GENERADA POR EL SISTEMA DE MATRÍCULAS
+               Documento informativo del registro
+================================================================
