@@ -63,7 +63,8 @@ Console.WriteLine("Ruta del contador: " +
         Console.WriteLine("8. Buscar alumnos por nivel educativo");
         Console.WriteLine("9. Subsanar documentos");
         Console.WriteLine("10. Regularizar fechas");
-        Console.WriteLine("11. Salir");
+        Console.WriteLine("11. Consultar vacantes disponibles");
+        Console.WriteLine("12. Salir");
 
 
         opcion = LeerEntero("Seleccione una opción: ");
@@ -110,15 +111,20 @@ Console.WriteLine("Ruta del contador: " +
     RegularizarFechas();
     break;
 
- case 11:
+case 11:
+    ConsultarVacantes();
+    break;
+
+case 12:
     Console.WriteLine("Programa finalizado.");
     break;
+
     default:
-        Console.WriteLine("Seleccione una opción del 1 al 9.");
+        Console.WriteLine("Seleccione una opción del 1 al 12.");
         break;
 }
 
-   } while (opcion != 11);
+   } while (opcion != 12);
 }
 static bool IniciarSesion()
 {
@@ -2212,6 +2218,53 @@ static void BuscarPorNivel()
         Console.WriteLine("Matrículas pendientes: " + pendientes);
     }
 }
+static void ConsultarVacantes()
+{
+    Console.WriteLine("\n===== CONSULTA DE VACANTES =====");
 
+    for (int nivel = 1; nivel <= 3; nivel++)
+    {
+        string nombreNivel = nivel == 1 ? "INICIAL"
+                           : nivel == 2 ? "PRIMARIA"
+                           : "SECUNDARIA";
+
+        Console.WriteLine("\nNIVEL: " + nombreNivel);
+
+        int gradoInicio = nivel == 1 ? 3 : 1;
+        int gradoFin = nivel == 1 ? 5 : nivel == 2 ? 6 : 5;
+
+        for (int grado = gradoInicio; grado <= gradoFin; grado++)
+        {
+            for (int turno = 1; turno <= 2; turno++)
+            {
+                int ocupadas = 0;
+
+                for (int i = 0; i < cantidad; i++)
+                {
+                    string[] datos = expedientes[i].Split('|');
+
+                    if (datos.Length < 16)
+                        continue;
+
+                    if (datos[11] == nivel.ToString() &&
+                        datos[3] == grado.ToString() &&
+                        datos[4] == turno.ToString() &&
+                        (datos[15] == "CONFIRMADA" ||
+                         datos[15] == "PENDIENTE"))
+                    {
+                        ocupadas++;
+                    }
+                }
+
+                int disponibles = Math.Max(0, MAX_VACANTES - ocupadas);
+
+                Console.WriteLine(
+                    $"Grado/Edad: {grado} | Turno: {(turno == 1 ? "Mañana" : "Tarde")} | " +
+                    $"Ocupadas: {ocupadas} | Disponibles: {disponibles}"
+                );
+            }
+        }
+    }
+}
 
 }
